@@ -81,7 +81,7 @@ implements MedicinesEntriesRepository {
     const medicinesEntriesFilteredMapped = medicinesEntriesFiltered.map(item => {
       return PrismaMedicineEntryWithMedicineVariantAndBatchMapper.toDomain({
         batch: item.batcheStock.batch,
-        batcheStockId: item.batcheStockId,
+        batchStockId: item.batchStockId,
         medicine: item.medicineStock.medicineVariant.medicine,
         createdAt: item.createdAt,
         entryDate: item.entryDate,

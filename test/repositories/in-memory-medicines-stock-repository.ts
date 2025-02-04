@@ -1,3 +1,4 @@
+import { UniqueEntityId } from '@/core/entities/unique-entity-id'
 import { MedicinesStockRepository } from '@/domain/pharma/application/repositories/medicines-stock-repository'
 import { MedicineStock } from '@/domain/pharma/enterprise/entities/medicine-stock'
 
@@ -19,6 +20,30 @@ implements MedicinesStockRepository {
     }
 
     this.items[index] = medicinestock
+  }
+
+  async addBatchStock(
+    medicineStockId: string,
+    batchStockId: string,
+  ): Promise<void | null> {
+    const itemIndex = await this.items.findIndex((item) =>
+      item.id.equal(new UniqueEntityId(medicineStockId)),
+    )
+
+    if (itemIndex === -1) {
+      return null
+    }
+
+    const medicineStock = this.items.find((item) =>
+      item.id.equal(new UniqueEntityId(medicineStockId)),
+    )
+
+    if (!medicineStock) {
+      return null
+    }
+
+    medicineStock?.addBatchStockId(new UniqueEntityId(batchStockId))
+    this.items[itemIndex] = medicineStock
   }
 
   async replenish(

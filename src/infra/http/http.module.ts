@@ -58,6 +58,10 @@ import { FetchPatientsController } from './controllers/patient/fetch-patients.co
 import { FetchPatientsUseCase } from '@/domain/pharma/application/use-cases/patient/fetch-pacients'
 import { DispensationController } from './controllers/dispensation/create-dispensation.controller'
 import { DispensationMedicineUseCase } from '@/domain/pharma/application/use-cases/dispensation/dispensation-medicine'
+import { FetchDispensationsController } from './controllers/dispensation/fetch-dispensations.controller'
+import { FetchDispensationsUseCase } from '@/domain/pharma/application/use-cases/dispensation/fetch-dispensation'
+import { CreateMovementTypeController } from './controllers/auxiliary-records/movement-type/create-movement-type.controller'
+import { CreateMovementTypeUseCase } from '@/domain/pharma/application/use-cases/auxiliary-records/movement-type/create-movement-type'
 
 @Module({
   imports: [DatabaseModule, CryptographyModule],
@@ -76,6 +80,7 @@ import { DispensationMedicineUseCase } from '@/domain/pharma/application/use-cas
     CreateMedicineController,
     CreateMedicineVariantController,
     CreatePatientController,
+    CreateMovementTypeController,
     DispensationController,
     RegisterMedicineEntryController,
     FetchOperatorsController,
@@ -91,6 +96,7 @@ import { DispensationMedicineUseCase } from '@/domain/pharma/application/use-cas
     FetchMedicinesEntriesController,
     FetchBatchesController,
     FetchPatientsController,
+    FetchDispensationsController,
 
   ],
   providers: [
@@ -107,6 +113,7 @@ import { DispensationMedicineUseCase } from '@/domain/pharma/application/use-cas
     CreateMedicineUseCase,
     CreateMedicineVariantUseCase,
     CreatePatientUseCase,
+    CreateMovementTypeUseCase,
     DispensationMedicineUseCase,
     RegisterMedicineEntryUseCase,
     FethOperatorsUseCase,
@@ -122,6 +129,7 @@ import { DispensationMedicineUseCase } from '@/domain/pharma/application/use-cas
     FetchRegisterMedicinesEntriesUseCase,
     FetchBatchesUseCase,
     FetchPatientsUseCase,
+    FetchDispensationsUseCase,
   ],
 })
 export class HttpModule {}

@@ -1,6 +1,6 @@
 import { UniqueEntityId } from '@/core/entities/unique-entity-id'
 import { BatchStock } from '@/domain/pharma/enterprise/entities/batch-stock'
-import { Batchestock as PrismaBatchStock, type Prisma } from '@prisma/client'
+import { BatcheStock as PrismaBatchStock, type Prisma } from '@prisma/client'
 
 export class PrismaBatchStockMapper {
   static toDomain(raw: PrismaBatchStock): BatchStock {
@@ -21,7 +21,7 @@ export class PrismaBatchStockMapper {
 
   static toPrisma(
     batchStock: BatchStock,
-  ): Prisma.BatchestockUncheckedCreateInput {
+  ): Prisma.BatcheStockUncheckedCreateInput {
     return {
       id: batchStock.id.toString(),
       batchId: batchStock.batchId.toString(),

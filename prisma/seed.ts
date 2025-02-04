@@ -5,31 +5,77 @@ const prisma = new PrismaClient()
 
 async function clearDatabase() {
   await prisma.medicineTherapeuticClass.deleteMany()
+  await prisma.medicineEntry.deleteMany()
+  await prisma.batcheStock.deleteMany()
+  await prisma.medicineStock.deleteMany()
   await prisma.medicineVariant.deleteMany()
   await prisma.therapeuticClass.deleteMany()
   await prisma.medicine.deleteMany()
   await prisma.pharmaceuticalForm.deleteMany()
   await prisma.unitMeasure.deleteMany()
   await prisma.pathology.deleteMany()
+  await prisma.batch.deleteMany()
   await prisma.manufacturer.deleteMany()
   await prisma.stock.deleteMany()
   await prisma.operator.deleteMany()
   await prisma.institution.deleteMany()
+  await prisma.movementType.deleteMany()
 }
 
 async function main() {
   await clearDatabase()
 
-  const institution = await prisma.institution.create({ data: { name: 'Instituto Flora Vida', cnpj: '01.234.567/0001-89', description: '' } })
-  const institution2 = await prisma.institution.create({ data: { name: 'Ubs - módulo 20', cnpj: '01.234.567/0001-10', description: '' } })
-  await prisma.institution.create({ data: { name: 'Ubs - módulo 15', cnpj: '01.234.567/0001-20', description: '' } })
+  const institution = await prisma.institution.create({
+    data: {
+      name: 'Instituto Flora Vida',
+      cnpj: '01.234.567/0001-89',
+      description: '',
+    },
+  })
+  const institution2 = await prisma.institution.create({
+    data: {
+      name: 'Ubs - módulo 20',
+      cnpj: '01.234.567/0001-10',
+      description: '',
+    },
+  })
+  await prisma.institution.create({
+    data: {
+      name: 'Ubs - módulo 15',
+      cnpj: '01.234.567/0001-20',
+      description: '',
+    },
+  })
 
   await prisma.operator.createMany({
     data: [
-      { name: 'Yuri Sousa', email: 'yurisousaenfer@gmail.com', passwordHash: await hash('12345678', 8), role: OperatorRole.MANAGER },
-      { name: 'Instituto Flora Vida', email: 'floravida@gmail.com', passwordHash: await hash('12345678', 8), role: OperatorRole.SUPER_ADMIN },
-      { name: 'Carlos Pereira', email: 'carlos.pereira@biovida.com', passwordHash: await hash('12345678', 8), role: OperatorRole.COMMON },
+      {
+        name: 'Instituto Flora Vida',
+        email: 'floravida@gmail.com',
+        passwordHash: await hash('12345678', 8),
+        role: OperatorRole.SUPER_ADMIN,
+      },
+      {
+        name: 'Carlos Pereira',
+        email: 'carlos.pereira@biovida.com',
+        passwordHash: await hash('12345678', 8),
+        role: OperatorRole.COMMON,
+      },
     ],
+  })
+
+  await prisma.operator.create({
+    data: {
+      name: 'Yuri Sousa',
+      email: 'yurisousaenfer@gmail.com',
+      passwordHash: await hash('12345678', 8),
+      role: OperatorRole.MANAGER,
+      institutions: {
+        connect: {
+          id: institution.id,
+        },
+      },
+    },
   })
 
   await prisma.stock.createMany({
@@ -42,12 +88,31 @@ async function main() {
 
   await prisma.manufacturer.createMany({
     data: [
-      { name: 'Medley', cnpj: '11111111111111', description: 'Fabricante de medicamentos genéricos.' },
-      { name: 'Eurofarma', cnpj: '22222222222222', description: 'Líder em medicamentos no Brasil.' },
-      { name: 'Pfizer', cnpj: '33333333333333', description: 'Empresa global de biotecnologia.' },
-      { name: 'Aché', cnpj: '44444444144', description: 'Especializada em medicamentos e suplementos.' },
-      { name: 'EMS', cnpj: '55555555000155', description: 'Maior farmacêutica brasileira.' },
-
+      {
+        name: 'Medley',
+        cnpj: '11111111111111',
+        description: 'Fabricante de medicamentos genéricos.',
+      },
+      {
+        name: 'Eurofarma',
+        cnpj: '22222222222222',
+        description: 'Líder em medicamentos no Brasil.',
+      },
+      {
+        name: 'Pfizer',
+        cnpj: '33333333333333',
+        description: 'Empresa global de biotecnologia.',
+      },
+      {
+        name: 'Aché',
+        cnpj: '44444444144',
+        description: 'Especializada em medicamentos e suplementos.',
+      },
+      {
+        name: 'EMS',
+        cnpj: '55555555000155',
+        description: 'Maior farmacêutica brasileira.',
+      },
     ],
   })
 
@@ -78,7 +143,6 @@ async function main() {
       { name: 'Herpes Zoster' },
       { name: 'Viroses Respiratórias' },
       { name: 'Candidíase Vaginal' },
-
     ],
   })
 
@@ -126,6 +190,15 @@ async function main() {
       therapeuticClassId: therapeuticClasse01.id,
     },
   })
+
+  await prisma.movementType.createMany(
+    {
+      data: [{
+        name: 'DONATION',
+        direction: 'ENTRY',
+      }],
+    },
+  )
 
   await prisma.medicineVariant.createMany({
     data: [
@@ -189,7 +262,6 @@ async function main() {
   const therapeuticClasse03 = await prisma.therapeuticClass.create({
     data: {
       name: 'Antibióticos',
-
     },
   })
 
@@ -261,7 +333,6 @@ async function main() {
   const therapeuticClasse05 = await prisma.therapeuticClass.create({
     data: {
       name: 'Antivirais',
-
     },
   })
 
@@ -297,7 +368,6 @@ async function main() {
   const therapeuticClasse06 = await prisma.therapeuticClass.create({
     data: {
       name: 'Anti-hipertensivos',
-
     },
   })
 
@@ -334,7 +404,6 @@ async function main() {
   const therapeuticClasse07 = await prisma.therapeuticClass.create({
     data: {
       name: 'Hipoglicemiantes',
-
     },
   })
 
@@ -407,7 +476,6 @@ async function main() {
   const therapeuticClasse09 = await prisma.therapeuticClass.create({
     data: {
       name: 'Ansiolíticos',
-
     },
   })
 
@@ -438,7 +506,6 @@ async function main() {
   const medicine10 = await prisma.medicine.create({
     data: {
       name: 'Fluoxetina',
-
     },
   })
 

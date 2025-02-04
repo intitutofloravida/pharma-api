@@ -223,7 +223,7 @@ Authorization: Bearer {{authToken}}
 ###
 
 # @name create_medicine_entry
-POST {{baseurl}}/medicine-variant/129b3e69-788f-4d56-9e45-4b22d9dc101b/entry/d3385301-9f60-41ce-a0ec-3825c9f2a98e
+POST {{baseurl}}/entry/stock/90295fc4-bf5d-4dcb-9fd6-6ea6fe685c60/medicine-variant/fc89393f-5cce-418b-a9ed-24cc1f0733e8
 Content-Type: application/json
 Authorization: Bearer {{authToken}} 
 
@@ -231,12 +231,12 @@ Authorization: Bearer {{authToken}}
   "newBatches": [{
     "code": "ABCDE5",
     "expirationDate": "2025-12-01T03:00:00.000Z",
-    "manufacturerId": "cbc6cd2d-b4b6-454a-9ea1-a44d1f6b348b",
-    "manufacturingDate": "2024-05-01T03:00:00.000Z",
+    "manufacturerId": "414998fc-bdaf-4b64-b594-bb68f6bb5084",
+    "manufacturingDate": "2025-01-01T03:00:00.000Z",
     "quantityToEntry": 50
   }],
-  "movementTypeId": "033353fa-6a5a-42d7-889f-f1bb3687202e"
-
+  "movementTypeId": "cf90be5e-92a8-420d-bdaf-583f720cd0a4",
+  "entryDate": "2025-01-30T22:30:01.019Z"
 }
 
 ###

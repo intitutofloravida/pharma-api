@@ -1,26 +1,11 @@
 import { BatchStocksRepository } from '@/domain/pharma/application/repositories/batch-stocks-repository'
-import { MedicinesStockRepository } from '@/domain/pharma/application/repositories/medicines-stock-repository'
 import { BatchStock } from '@/domain/pharma/enterprise/entities/batch-stock'
 
 export class InMemoryBatchStocksRepository implements BatchStocksRepository {
   public items: BatchStock[] = []
 
-  constructor(private medicineStockRepository: MedicinesStockRepository) {}
-
   async create(batchstock: BatchStock) {
     this.items.push(batchstock)
-    const medicineStock =
-      await this.medicineStockRepository.findByMedicineVariantIdAndStockId(
-        batchstock.medicineVariantId.toString(),
-        batchstock.stockId.toString(),
-      )
-
-    if (!medicineStock) {
-      return null
-    }
-
-    medicineStock.replenish(batchstock.quantity)
-    await this.medicineStockRepository.save(medicineStock)
   }
 
   async replenish(batchstockId: string, quantity: number) {
@@ -28,22 +13,10 @@ export class InMemoryBatchStocksRepository implements BatchStocksRepository {
     if (!batchstock) {
       return null
     }
-    const medicineStock =
-      await this.medicineStockRepository.findByMedicineVariantIdAndStockId(
-        batchstock.medicineVariantId.toString(),
-        batchstock.stockId.toString(),
-      )
-    if (!medicineStock) {
-      return null
-    }
 
     batchstock.replenish(quantity)
-    medicineStock.replenish(quantity)
 
-    await Promise.all([
-      this.save(batchstock),
-      this.medicineStockRepository.save(medicineStock),
-    ])
+    await this.save(batchstock)
 
     return batchstock
   }
@@ -56,19 +29,6 @@ export class InMemoryBatchStocksRepository implements BatchStocksRepository {
 
     batchstock.subtract(quantity)
     await this.save(batchstock)
-
-    const medicineStock =
-      await this.medicineStockRepository.findByMedicineVariantIdAndStockId(
-        batchstock.medicineVariantId.toString(),
-        batchstock.stockId.toString(),
-      )
-    if (!medicineStock) {
-      throw new Error('Medicine stock not found')
-    }
-
-    medicineStock.subtract(quantity)
-    await this.medicineStockRepository.save(medicineStock)
-
     return batchstock
   }
 

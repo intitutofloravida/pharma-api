@@ -4,6 +4,7 @@ import { Optional } from '@/core/types/optional'
 import { MedicineExit } from './exit'
 
 export interface DispensationProps {
+  operatorId: UniqueEntityId
   patientId: UniqueEntityId
   dispensationDate: Date
   exitsRecords: MedicineExit[]
@@ -12,6 +13,10 @@ export interface DispensationProps {
 }
 
 export class Dispensation extends Entity<DispensationProps> {
+  get operatorId() {
+    return this.props.operatorId
+  }
+
   get patientId() {
     return this.props.patientId
   }

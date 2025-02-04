@@ -54,7 +54,7 @@ describe('Dispensation Medicine', () => {
       inMemoryPharmaceuticalFormsRepository,
       inMemoryUnitsMeasureRepository,
     )
-    inMemoryBatchStocksRepository = new InMemoryBatchStocksRepository(inMemoryMedicinesStockRepository)
+    inMemoryBatchStocksRepository = new InMemoryBatchStocksRepository()
     inMemoryMedicinesExitsRepository = new InMemoryMedicinesExitsRepository()
     inMemoryDispensationsMedicinesRepository = new InMemoryDispensationsMedicinesRepository()
 

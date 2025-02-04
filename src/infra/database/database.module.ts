@@ -36,6 +36,8 @@ import { DispensationsMedicinesRepository } from '@/domain/pharma/application/re
 import { PrismaDispensationsMedicinesRepository } from './prisma/repositories/prisma-dispensations-medicines-repository'
 import { PrismaMedicinesExitsRepository } from './prisma/repositories/prisma-medicines-exits-repository'
 import { MedicinesExitsRepository } from '@/domain/pharma/application/repositories/medicines-exits-repository'
+import { MovementTypesRepository } from '@/domain/pharma/application/repositories/movement-type'
+import { PrismaMovementTypesRepository } from './prisma/repositories/prisma-movement-type-repository'
 
 @Module({
   providers: [
@@ -76,6 +78,7 @@ import { MedicinesExitsRepository } from '@/domain/pharma/application/repositori
     { provide: AddresssRepository, useClass: PrismaAddressRepository },
     { provide: MedicinesExitsRepository, useClass: PrismaMedicinesExitsRepository },
     { provide: DispensationsMedicinesRepository, useClass: PrismaDispensationsMedicinesRepository },
+    { provide: MovementTypesRepository, useClass: PrismaMovementTypesRepository },
   ],
   exports: [
     PrismaService,
@@ -97,6 +100,7 @@ import { MedicinesExitsRepository } from '@/domain/pharma/application/repositori
     AddresssRepository,
     MedicinesExitsRepository,
     DispensationsMedicinesRepository,
+    MovementTypesRepository,
   ],
 })
 export class DatabaseModule {}

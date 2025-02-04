@@ -86,7 +86,7 @@ implements ManufacturersRepository {
     }
   }
 
-  async delete(id: string): Promise<null> {
+  async delete(id: string): Promise<void> {
     const itemIndex = this.items.findIndex(item => item.id.equal(new UniqueEntityId(id)))
 
     this.items.splice(itemIndex)

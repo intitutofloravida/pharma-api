@@ -14,7 +14,7 @@ import { RegisterMedicineEntryDto } from './dtos/register-medicine-entry.dto'
 import { ApiTags } from '@nestjs/swagger'
 
 @ApiTags('entry')
-@Controller('entry/stock/:stockId/medicine-variant/:medicineVariantId')
+@Controller('medicine-entry/stock/:stockId/medicine-variant/:medicineVariantId')
 @UseGuards(JwtAuthGuard)
 export class RegisterMedicineEntryController {
   constructor(private registerMedicineEntry: RegisterMedicineEntryUseCase) {}

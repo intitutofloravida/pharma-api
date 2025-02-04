@@ -66,7 +66,7 @@ export class PrismaStocksRepository implements StocksRepository {
         },
       },
       include: {
-        Institution: true,
+        institution: true,
       },
       orderBy: {
         createdAt: 'desc',
@@ -93,7 +93,11 @@ export class PrismaStocksRepository implements StocksRepository {
           },
         },
         include: {
-          Institution: true,
+          institution: {
+            select: {
+              name: true,
+            },
+          },
         },
         orderBy: {
           createdAt: 'desc',
@@ -112,7 +116,7 @@ export class PrismaStocksRepository implements StocksRepository {
 
     const stocksMapped = stocks.map((stock) => ({
       stock: PrismaStockMapper.toDomain(stock),
-      institutionName: stock.Institution?.name ?? '',
+      institutionName: stock.institution?.name ?? '',
     }))
     return {
       stocks: stocksMapped,

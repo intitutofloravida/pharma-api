@@ -18,7 +18,15 @@ import { makeMovementType } from 'test/factories/make-movement-type'
 import { InMemoryMovementTypesRepository } from 'test/repositories/in-memory-movement-types-repository'
 import { InMemoryMedicinesEntriesRepository } from 'test/repositories/in-memory-medicines-entries-repository'
 import { InMemoryOperatorsRepository } from 'test/repositories/in-memory-operators-repository'
+import { makeInstitution } from 'test/factories/make-insitution'
+import { makeOperator } from 'test/factories/make-operator'
+import { makePharmaceuticalForm } from 'test/factories/make-pharmaceutical-form'
+import { makeUnitMeasure } from 'test/factories/make-unit-measure'
+import { addYears } from 'date-fns'
+import { makeManufacturer } from 'test/factories/make-manufacturer'
+import { InMemoryManufacturersRepository } from 'test/repositories/in-memory-manufacturers-repository'
 
+let inMemoryManufacturersRepository: InMemoryManufacturersRepository
 let inMemoryOperatorsRepository: InMemoryOperatorsRepository
 let inMemoryMovementTypesRepository: InMemoryMovementTypesRepository
 let inMemoryUnitsMeasureRepository: InMemoryUnitsMeasureRepository
@@ -36,8 +44,11 @@ let sut: RegisterMedicineEntryUseCase
 describe('Register Entry', () => {
   beforeEach(() => {
     inMemoryInstitutionsRepository = new InMemoryInstitutionsRepository()
-    inMemoryOperatorsRepository = new InMemoryOperatorsRepository(inMemoryInstitutionsRepository)
+    inMemoryOperatorsRepository = new InMemoryOperatorsRepository(
+      inMemoryInstitutionsRepository,
+    )
     inMemoryMovementTypesRepository = new InMemoryMovementTypesRepository()
+    inMemoryManufacturersRepository = new InMemoryManufacturersRepository()
     inMemoryPharmaceuticalFormsRepository =
       new InMemoryPharmaceuticalFormsRepository()
     inMemoryUnitsMeasureRepository = new InMemoryUnitsMeasureRepository()
@@ -47,15 +58,13 @@ describe('Register Entry', () => {
     inMemoryMedicinesRepository = new InMemoryMedicinesRepository()
     inMemoryBatchesRepository = new InMemoryBatchesRepository()
     inMemoryMedicinesStockRepository = new InMemoryMedicinesStockRepository()
-    inMemoryBatchStocksRepository = new InMemoryBatchStocksRepository(
-      inMemoryMedicinesStockRepository,
-    )
+    inMemoryBatchStocksRepository = new InMemoryBatchStocksRepository()
     inMemoryMedicinesVariantsRepository =
-    new InMemoryMedicinesVariantsRepository(
-      inMemoryMedicinesRepository,
-      inMemoryPharmaceuticalFormsRepository,
-      inMemoryUnitsMeasureRepository,
-    )
+      new InMemoryMedicinesVariantsRepository(
+        inMemoryMedicinesRepository,
+        inMemoryPharmaceuticalFormsRepository,
+        inMemoryUnitsMeasureRepository,
+      )
     inMemoryMedicinesEntriesRepository = new InMemoryMedicinesEntriesRepository(
       inMemoryBatchStocksRepository,
       inMemoryBatchesRepository,
@@ -80,7 +89,20 @@ describe('Register Entry', () => {
   it('shoult be able to register a new entry', async () => {
     const quantityToEntry = 20
 
-    const stock = makeStock()
+    const institution = makeInstitution()
+    await inMemoryInstitutionsRepository.create(institution)
+
+    const operator = makeOperator({
+      institutionsIds: [institution.id],
+      role: 'MANAGER',
+    })
+
+    const manufacturer = makeManufacturer()
+    await inMemoryManufacturersRepository.create(manufacturer)
+
+    const stock = makeStock({
+      institutionId: institution.id,
+    })
     await inMemoryStocksRepository.create(stock)
 
     const medicine = makeMedicine()
@@ -97,12 +119,12 @@ describe('Register Entry', () => {
     const result = await sut.execute({
       medicineVariantId: medicineVariant.id.toString(),
       stockId: stock.id.toString(),
-      operatorId: 'operator-1',
+      operatorId: operator.id.toString(),
       movementTypeId: movementType.id.toString(),
       newBatches: [
         {
           code: 'ABCDE',
-          expirationDate: new Date(2025, 1, 1),
+          expirationDate: addYears(new Date(2025, 1, 1), 1),
           manufacturerId: 'asasas',
           quantityToEntry,
         },
@@ -126,7 +148,21 @@ describe('Register Entry', () => {
 
   it('shoult not be able to register a new entry with quantity less or equal zero', async () => {
     const quantityToEntry = 20
-    const stock = makeStock()
+
+    const institution = makeInstitution()
+    await inMemoryInstitutionsRepository.create(institution)
+
+    const operator = makeOperator({
+      institutionsIds: [institution.id],
+      role: 'MANAGER',
+    })
+
+    const manufacturer = makeManufacturer()
+    await inMemoryManufacturersRepository.create(manufacturer)
+
+    const stock = makeStock({
+      institutionId: institution.id,
+    })
     await inMemoryStocksRepository.create(stock)
 
     const medicine = makeMedicine()
@@ -143,46 +179,42 @@ describe('Register Entry', () => {
       stockId: stock.id,
     })
 
-    const batch = makeBatch()
+    const batch = makeBatch({ manufacturerId: manufacturer.id })
     await inMemoryBatchesRepository.create(batch)
 
     const batchestock1 = makeBatchStock({
+      currentQuantity: quantityToEntry,
       batchId: batch.id,
       medicineVariantId: medicineVariant.id,
       stockId: stock.id,
+      medicineStockId: medicineStock.id,
     })
-    medicineStock.batchesStockIds = [batchestock1.id]
 
     await inMemoryMedicinesStockRepository.create(medicineStock)
     await inMemoryBatchStocksRepository.create(batchestock1)
-
+    await inMemoryMedicinesStockRepository.replenish(
+      medicineStock.id.toString(),
+      quantityToEntry,
+    )
+    await inMemoryMedicinesStockRepository.addBatchStock(
+      medicineStock.id.toString(),
+      batchestock1.id.toString(),
+    )
     const movementType = makeMovementType()
     await inMemoryMovementTypesRepository.create(movementType)
 
-    await sut.execute({
-      medicineVariantId: medicineVariant.id.toString(),
-      batches: [
-        {
-          batchId: batch.id.toString(),
-          quantityToEntry,
-        },
-      ],
-      stockId: stock.id.toString(),
-      operatorId: 'operator-1',
-      movementTypeId: movementType.id.toString(),
-    })
     const result = await sut.execute({
       medicineVariantId: medicineVariant.id.toString(),
       newBatches: [
         {
           code: 'ABCDE10',
           expirationDate: new Date(2025, 10, 5),
-          manufacturerId: 'sds',
+          manufacturerId: manufacturer.id.toString(),
           quantityToEntry: 0,
         },
       ],
       stockId: stock.id.toString(),
-      operatorId: 'operator-1',
+      operatorId: operator.id.toString(),
       movementTypeId: movementType.id.toString(),
       batches: [
         {
@@ -191,9 +223,9 @@ describe('Register Entry', () => {
         },
       ],
     })
+
     expect(result.isLeft()).toBeTruthy()
     if (result.isLeft()) {
-      expect(inMemoryMedicinesEntriesRepository.items).toHaveLength(1)
       expect(inMemoryMedicinesStockRepository.items[0].quantity).toBe(
         quantityToEntry,
       )
@@ -207,21 +239,43 @@ describe('Register Entry', () => {
     const quantityToEntryBatch2 = 15
     const quantityToEntryBatch3 = 20
 
-    const stock = makeStock()
+    const institution = makeInstitution()
+    await inMemoryInstitutionsRepository.create(institution)
+
+    const operator = makeOperator({
+      institutionsIds: [institution.id],
+      role: 'MANAGER',
+    })
+
+    await inMemoryOperatorsRepository.create(operator)
+
+    const stock = makeStock({
+      institutionId: institution.id,
+    })
     await inMemoryStocksRepository.create(stock)
 
-    const medicine = makeMedicine()
+    const pharmaceuticalForm = makePharmaceuticalForm()
+    await inMemoryPharmaceuticalFormsRepository.create(pharmaceuticalForm)
+
+    const unitMeasure = makeUnitMeasure()
+    await inMemoryUnitsMeasureRepository.create(unitMeasure)
+
+    const medicine = makeMedicine({})
     await inMemoryMedicinesRepository.create(medicine)
 
     const medicineVariant = makeMedicineVariant({
       medicineId: medicine.id,
+      pharmaceuticalFormId: pharmaceuticalForm.id,
+      unitMeasureId: unitMeasure.id,
     })
+
     await inMemoryMedicinesVariantsRepository.create(medicineVariant)
 
     const medicineStock = makeMedicineStock({
       batchesStockIds: [],
       medicineVariantId: medicineVariant.id,
       stockId: stock.id,
+      currentQuantity: 0,
     })
 
     const batch = makeBatch()
@@ -231,6 +285,8 @@ describe('Register Entry', () => {
       batchId: batch.id,
       medicineVariantId: medicineVariant.id,
       stockId: stock.id,
+      medicineStockId: medicineStock.id,
+      currentQuantity: 10,
     })
 
     const batch2 = makeBatch()
@@ -240,11 +296,25 @@ describe('Register Entry', () => {
       batchId: batch2.id,
       medicineVariantId: medicineVariant.id,
       stockId: stock.id,
+      medicineStockId: medicineStock.id,
+      currentQuantity: 10,
     })
-    medicineStock.batchesStockIds = [batchestock1.id, batchestock2.id]
+    // medicineStock.addBatchStockId(batchestock1.id)
+    // medicineStock.addBatchStockId(batchestock2.id)
+
     await inMemoryMedicinesStockRepository.create(medicineStock)
     await inMemoryBatchStocksRepository.create(batchestock1)
     await inMemoryBatchStocksRepository.create(batchestock2)
+    // medicineStock.batchesStockIds = [batchestock1.id, batchestock2.id]
+    await inMemoryMedicinesStockRepository.addBatchStock(
+      medicineStock.id.toString(),
+      batchestock1.id.toString(),
+    )
+    await inMemoryMedicinesStockRepository.addBatchStock(
+      medicineStock.id.toString(),
+      batchestock2.id.toString(),
+    )
+    await inMemoryMedicinesStockRepository.replenish(medicineStock.id.toString(), 20)
 
     const movementType = makeMovementType()
     await inMemoryMovementTypesRepository.create(movementType)
@@ -262,22 +332,22 @@ describe('Register Entry', () => {
         },
       ],
       stockId: stock.id.toString(),
-      operatorId: 'operator-1',
+      operatorId: operator.id.toString(),
       movementTypeId: movementType.id.toString(),
     })
-    const batch3 = makeBatch()
+
     const result2 = await sut.execute({
       medicineVariantId: medicineVariant.id.toString(),
       newBatches: [
         {
-          code: batch3.code,
-          expirationDate: batch3.expirationDate,
-          manufacturerId: batch3.manufacturerId.toString(),
+          code: 'AZXD1',
+          expirationDate: addYears(new Date(), 1),
+          manufacturerId: 'aa',
           quantityToEntry: quantityToEntryBatch3,
         },
       ],
       stockId: stock.id.toString(),
-      operatorId: 'operator-1',
+      operatorId: operator.id.toString(),
       movementTypeId: movementType.id.toString(),
       batches: [],
     })
@@ -286,17 +356,17 @@ describe('Register Entry', () => {
     expect(result2.isRight()).toBeTruthy()
     if (result1.isRight()) {
       expect(inMemoryMedicinesEntriesRepository.items).toHaveLength(3)
-      expect(inMemoryMedicinesStockRepository.items[0].quantity).toBe(
-        quantityToEntryBatch + quantityToEntryBatch2 + quantityToEntryBatch3,
-      )
       expect(inMemoryBatchStocksRepository.items[0].quantity).toBe(
-        quantityToEntryBatch,
+        quantityToEntryBatch + 10,
       )
       expect(inMemoryBatchStocksRepository.items[1].quantity).toBe(
-        quantityToEntryBatch2,
+        quantityToEntryBatch2 + 10,
       )
       expect(inMemoryBatchStocksRepository.items[2].quantity).toBe(
         quantityToEntryBatch3,
+      )
+      expect(inMemoryMedicinesStockRepository.items[0].quantity).toBe(
+        quantityToEntryBatch + quantityToEntryBatch2 + quantityToEntryBatch3 + 20,
       )
     }
   })

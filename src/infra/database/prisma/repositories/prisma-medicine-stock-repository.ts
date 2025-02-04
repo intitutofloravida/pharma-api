@@ -8,6 +8,7 @@ import { PrismaMedicineStockMapper } from '../mappers/prisma-medicine-stock-mapp
 export class PrismaMedicinesStockRepository
 implements MedicinesStockRepository {
   constructor(private prisma: PrismaService) {}
+
   async create(medicineStock: MedicineStock): Promise<void> {
     await this.prisma.medicineStock.create({
       data: PrismaMedicineStockMapper.toPrisma(medicineStock),
@@ -25,6 +26,21 @@ implements MedicinesStockRepository {
     if (!medicineStock) {
       return null
     }
+  }
+
+  async addBatchStock(medicineStockId: string, batchStockId: string): Promise<void | null> {
+    await this.prisma.medicineStock.update({
+      where: {
+        id: medicineStockId,
+      },
+      data: {
+        batchesStocks: {
+          connect: {
+            id: batchStockId,
+          },
+        },
+      },
+    })
   }
 
   async replenish(
@@ -64,6 +80,7 @@ implements MedicinesStockRepository {
       },
       data: {
         currentQuantity: { decrement: quantity },
+
       },
       include: {
         batchesStocks: {

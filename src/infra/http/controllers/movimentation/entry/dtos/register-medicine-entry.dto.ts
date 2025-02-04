@@ -45,7 +45,7 @@ class NewBatchDto {
     example: 10,
   })
   @IsNumber()
-  quantityToEntry!: number
+  quantityToEntry: number
 }
 
 export class RegisterMedicineEntryDto {

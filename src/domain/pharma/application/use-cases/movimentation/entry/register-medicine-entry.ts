@@ -3,9 +3,7 @@ import { ResourceNotFoundError } from '@/core/erros/errors/resource-not-found-er
 import { MedicinesStockRepository } from '../../../repositories/medicines-stock-repository'
 import { BatchesRepository } from '../../../repositories/batches-repository'
 import { NoBatchInStockFoundError } from '../../_errors/no-batch-in-stock-found-error'
-import {
-  MedicineEntry,
-} from '../../../../enterprise/entities/entry'
+import { MedicineEntry } from '../../../../enterprise/entities/entry'
 import { MedicinesEntriesRepository } from '../../../repositories/medicines-entries-repository'
 import { UniqueEntityId } from '@/core/entities/unique-entity-id'
 import { InvalidEntryQuantityError } from '../../_errors/invalid-entry-quantity-error'
@@ -17,6 +15,8 @@ import { MedicinesVariantsRepository } from '../../../repositories/medicine-vari
 import { BatchStocksRepository } from '../../../repositories/batch-stocks-repository'
 import { BatchStock } from '@/domain/pharma/enterprise/entities/batch-stock'
 import { AtLeastOneMustBePopulatedError } from '../_errors/at-least-one-must-be-populated-error'
+import { StockNotFoundError } from '../../auxiliary-records/stock/_errors/stock-not-found-error'
+import { MedicineVariantNotFoundError } from '../../medicine/medicine-variant/_errors/medicine-variant-not-found-error'
 
 interface RegisterMedicineEntryUseCaseRequest {
   medicineVariantId: string;
@@ -33,7 +33,7 @@ interface RegisterMedicineEntryUseCaseRequest {
     manufacturingDate?: Date;
     quantityToEntry: number;
   }[];
-  movementTypeId: string
+  movementTypeId: string;
   entryDate?: Date;
 }
 
@@ -48,7 +48,7 @@ export class RegisterMedicineEntryUseCase {
     private stocksRepository: StocksRepository,
     private medicineEntryRepository: MedicinesEntriesRepository,
     private medicinesStockRepository: MedicinesStockRepository,
-    private batchestocksRepository: BatchStocksRepository,
+    private batcheStocksRepository: BatchStocksRepository,
     private batchesRepository: BatchesRepository,
     private medicinesVariantsRepository: MedicinesVariantsRepository,
   ) {}
@@ -62,19 +62,22 @@ export class RegisterMedicineEntryUseCase {
     entryDate,
     movementTypeId,
   }: RegisterMedicineEntryUseCaseRequest): Promise<RegisterMedicineEntryUseCaseResponse> {
-    if ((!batches && !newBatches) || (batches?.length === 0 && newBatches?.length === 0)) {
+    if (
+      (!batches && !newBatches) ||
+      (batches?.length === 0 && newBatches?.length === 0)
+    ) {
       return left(new AtLeastOneMustBePopulatedError())
     }
 
     const stock = await this.stocksRepository.findById(stockId)
     if (!stock) {
-      return left(new ResourceNotFoundError())
+      return left(new StockNotFoundError(stockId))
     }
 
     const medicineVariant =
       await this.medicinesVariantsRepository.findById(medicineVariantId)
     if (!medicineVariant) {
-      return left(new ResourceNotFoundError())
+      return left(new MedicineVariantNotFoundError(medicineVariantId))
     }
 
     let medicineStock =
@@ -99,13 +102,15 @@ export class RegisterMedicineEntryUseCase {
           return left(new InvalidEntryQuantityError())
         }
 
-        const batchExists = await this.batchesRepository.findById(batch.batchId)
+        const batchExists = await this.batchesRepository.findById(
+          batch.batchId,
+        )
         if (!batchExists) {
           return left(new ResourceNotFoundError())
         }
 
         let batchStock =
-        await this.batchestocksRepository.findByBatchIdAndStockId(
+        await this.batcheStocksRepository.findByBatchIdAndStockId(
           batch.batchId,
           stockId,
         )
@@ -119,17 +124,33 @@ export class RegisterMedicineEntryUseCase {
             medicineStockId: medicineStock.id,
           })
 
-          await this.batchestocksRepository.create(batchStock)
+          await this.batcheStocksRepository.create(batchStock)
+          await Promise.all([
+            this.medicinesStockRepository.addBatchStock(
+              medicineStock.id.toString(),
+              batchStock.id.toString(),
+            ),
+            this.medicinesStockRepository.replenish(
+              medicineStock.id.toString(),
+              batchStock.quantity,
+            ),
+          ])
         } else {
-          await this.batchestocksRepository.replenish(
-            batchStock.id.toString(),
-            batch.quantityToEntry,
-          )
+          await Promise.all([
+            this.batcheStocksRepository.replenish(
+              batchStock.id.toString(),
+              batch.quantityToEntry,
+            ),
+            this.medicinesStockRepository.replenish(
+              medicineStock.id.toString(),
+              batch.quantityToEntry,
+            ),
+          ])
         }
 
         totalMovementBatches += batch.quantityToEntry
         const entry = MedicineEntry.create({
-          batcheStockId: new UniqueEntityId(batchStock.id.toString()),
+          batcheStockId: batchStock.id,
           movementTypeId: new UniqueEntityId(movementTypeId),
           medicineStockId: medicineStock.id,
           operatorId: new UniqueEntityId(operatorId),
@@ -174,14 +195,20 @@ export class RegisterMedicineEntryUseCase {
           medicineStockId: medicineStock.id,
         })
 
-        medicineStock.addBatchStockId(batchStock.id)
-        await this.medicinesStockRepository.save(medicineStock)
-        await this.batchestocksRepository.create(batchStock)
+        await this.batcheStocksRepository.create(batchStock)
+        await this.medicinesStockRepository.addBatchStock(
+          medicineStock.id.toString(),
+          batchStock.id.toString(),
+        )
+        await this.medicinesStockRepository.replenish(
+          medicineStock.id.toString(),
+          quantityToEntry,
+        )
 
         totalMovementNewBatches += quantityToEntry
 
         const entry = MedicineEntry.create({
-          batcheStockId: new UniqueEntityId(batchStock.id.toString()),
+          batcheStockId: batchStock.id,
           movementTypeId: new UniqueEntityId(movementTypeId),
           medicineStockId: medicineStock.id,
           operatorId: new UniqueEntityId(operatorId),

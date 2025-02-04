@@ -6,7 +6,7 @@ export class PrismaMedicineEntryMapper {
   static toDomain(raw: PrismaMedicineEntry): MedicineEntry {
     return MedicineEntry.create({
       operatorId: new UniqueEntityId(raw.operatorId),
-      batcheStockId: new UniqueEntityId(raw.batcheStockId),
+      batcheStockId: new UniqueEntityId(raw.batchStockId),
       medicineStockId: new UniqueEntityId(raw.medicineStockId),
       movementTypeId: new UniqueEntityId(raw.movementTypeId),
       quantity: raw.quantity,
@@ -21,7 +21,7 @@ export class PrismaMedicineEntryMapper {
   static toPrisma(medicineEntry: MedicineEntry): Prisma.MedicineEntryUncheckedCreateInput {
     return {
       id: medicineEntry.id.toString(),
-      batcheStockId: medicineEntry.batcheStockId.toString(),
+      batchStockId: medicineEntry.batcheStockId.toString(),
       medicineStockId: medicineEntry.medicineStockId.toString(),
       movementTypeId: medicineEntry.movementTypeId.toString(),
       operatorId: medicineEntry.operatorId.toString(),
